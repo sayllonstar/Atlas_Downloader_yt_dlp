@@ -1,6 +1,7 @@
 import os
 import threading
 import customtkinter as ctk
+from tkinter import filedialog
 import yt_dlp
 
 # Configuração de tema da interface
@@ -18,6 +19,8 @@ class DownloaderApp(ctk.CTk):
     self.geometry("550x320")
     self.resizable(False, False)
 
+    self.download_path = os.path.join(os.path.expanduser("~"), "Downloads")
+
     # Título Principal
     self.label_title = ctk.CTkLabel(
         self, text="yt-dlp Downloader", font=ctk.CTkFont(size=20, weight="bold")
@@ -29,6 +32,19 @@ class DownloaderApp(ctk.CTk):
         self, placeholder_text="Cole o link do vídeo ou playlist aqui...", width=450
     )
     self.entry_url.pack(padx=20, pady=10)
+
+    self.entry_folder = ctk.CTkEntry(self.frame_folder, width=390)
+    self.entry_folder.insert(0, self.download_path)
+    self.entry_folder.pack(side="left", padx=(30, 5))
+
+    self.btn_browser = ctk.CTkButton(
+        self.frame_folder,
+        text="Procurar...",
+        width=100,
+        command=self.select_folder,
+    )
+    self.btn_browser.pack(side="left", padx=5)
+
 
     # Opções de Formato (MP3 / MP4)
     self.format_var = ctk.StringVar(value="mp4")
@@ -64,9 +80,16 @@ class DownloaderApp(ctk.CTk):
     )
     self.label_status.pack(padx=20, pady=5)
 
-  def progress_hook(self, d):
+    def select_folder(self):
+        chosen_folder = filedialog.askdirectory(initialdir=self.download_path)
+        if chosen_folder:
+            self.download_path = chosen_folder
+            self.entry_folder.delete(0, "end")
+            self.entry_folder.insert(0, self.download_path)
+
+    def progress_hook(self, d):
     """Atualiza o texto de status com o progresso do download."""
-    if d['status'] == 'downloading':
+        if d['status'] == 'downloading':
       # Remove caracteres de formatação de cor do terminal
       percent = d.get('_percent_str', '').strip()
       self.label_status.configure(
