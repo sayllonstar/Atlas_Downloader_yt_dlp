@@ -52,11 +52,18 @@ class HomeView(ctk.CTkFrame):
         self.progress_card.show(after_widget=self.drop_zone)
         self.progress_card.update_progress(0.0, "Iniciando download...")
         
-        # Obtém qualidade de áudio configurada na tela de Ajustes, se houver
-        audio_quality = "192"
+        # Obtém configurações da tela de Ajustes, se houver
+        audio_quality = "320"
+        video_quality = "best"
+        browser_cookies = None
         settings_view = getattr(self.master, "frames", {}).get("settings")
-        if settings_view and hasattr(settings_view, "get_audio_quality"):
-            audio_quality = settings_view.get_audio_quality()
+        if settings_view:
+            if hasattr(settings_view, "get_audio_quality"):
+                audio_quality = settings_view.get_audio_quality()
+            if hasattr(settings_view, "get_video_resolution"):
+                video_quality = settings_view.get_video_resolution()
+            if hasattr(settings_view, "get_browser_cookies"):
+                browser_cookies = settings_view.get_browser_cookies() 
 
         # Inicia de forma assíncrona
         self.downloader.download_async(
@@ -64,6 +71,8 @@ class HomeView(ctk.CTkFrame):
             output_dir=path,
             format_type=fmt,
             audio_quality=audio_quality,
+            video_quality=video_quality,
+            browser_cookies=browser_cookies,
             progress_callback=self.on_progress,
             completion_callback=self.on_complete
         )

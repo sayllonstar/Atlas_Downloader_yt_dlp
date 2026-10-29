@@ -24,7 +24,9 @@ class Downloader:
       url: str,
       output_dir: str,
       format_type: str = "mp4",
-      audio_quality: str = "192",
+      audio_quality: str = "320",
+      video_quality: str = "best",
+      browser_cookies: Optional[str] = None,
       progress_callback: Optional[Callable[[float, str], None]] = None,
       completion_callback: Optional[Callable[[bool, str, dict], None]] = None,
   ):
@@ -45,6 +47,8 @@ class Downloader:
             output_dir,
             format_type,
             audio_quality,
+            video_quality,
+            browser_cookies,
             progress_callback,
             completion_callback,
         ),
@@ -58,6 +62,8 @@ class Downloader:
       output_dir: str,
       format_type: str,
       audio_quality: str,
+      video_quality: str,
+      browser_cookies: str,
       progress_callback: Optional[Callable[[float, str], None]],
       completion_callback: Optional[Callable[[bool, str, dict], None]],
   ):
@@ -92,6 +98,9 @@ class Downloader:
         "no_warnings": True,
     }
 
+    if browser_cookies:
+      ydl_opts["cookiesfrombrowser"] = (browser_cookies,)
+
     if format_type == "mp3":
       ydl_opts.update({
           "format": "bestaudio/best",
@@ -102,10 +111,16 @@ class Downloader:
           }],
       })
     else:  # MP4
-      ydl_opts.update({
-          "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best[ext=mp4]/best",
-          "merge_output_format": "mp4",
-      })
+      if video_quality == "best":
+        fmt_string = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
+      else:
+        fmt_string = f"bestvideo[height<={video_quality}][ext=mp4]+bestaudio[ext=m4a]/best[height<={video_quality}][ext=mp4]/best"
+        
+        
+    ydl_opts.update({
+        "format": fmt_string,
+        "merge_output_format": "mp4",
+    })
 
     try:
       with yt_dlp.YoutubeDL(ydl_opts) as ydl:
