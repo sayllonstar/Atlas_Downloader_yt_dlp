@@ -67,62 +67,61 @@ class Downloader:
       progress_callback: Optional[Callable[[float, str], None]],
       completion_callback: Optional[Callable[[bool, str, dict], None]],
   ):
-    format_type = format_type.lower()
-    os.makedirs(output_dir, exist_ok=True)
-
-    def progress_hook(d):
-      if not progress_callback:
-        return
-
-      if d.get("status") == "downloading":
-        total_bytes = d.get("total_bytes") or d.get("total_bytes_estimate", 0)
-        downloaded_bytes = d.get("downloaded_bytes", 0)
-
-        if total_bytes > 0:
-          percentage = downloaded_bytes / total_bytes
-          progress_callback(percentage, f"Baixando: {int(percentage * 100)}%")
-        else:
-          percent_str = self.clean_ansi(d.get("_percent_str", "0%")).strip()
-          progress_callback(0.0, f"Baixando: {percent_str}")
-
-      elif d.get("status") == "finished":
-        progress_callback(1.0, "Processando arquivo...")
-
-    # Template do caminho final
-    output_template = os.path.join(output_dir, "%(title)s.%(ext)s")
-
-    ydl_opts = {
-        "outtmpl": output_template,
-        "progress_hooks": [progress_hook],
-        "quiet": True,
-        "no_warnings": True,
-    }
-
-    if browser_cookies:
-      ydl_opts["cookiesfrombrowser"] = (browser_cookies,)
-
-    if format_type == "mp3":
-      ydl_opts.update({
-          "format": "bestaudio/best",
-          "postprocessors": [{
-              "key": "FFmpegExtractAudio",
-              "preferredcodec": "mp3",
-              "preferredquality": audio_quality,
-          }],
-      })
-    else:  # MP4
-      if video_quality == "best":
-        fmt_string = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
-      else:
-        fmt_string = f"bestvideo[height<={video_quality}][ext=mp4]+bestaudio[ext=m4a]/best[height<={video_quality}][ext=mp4]/best"
-        
-        
-    ydl_opts.update({
-        "format": fmt_string,
-        "merge_output_format": "mp4",
-    })
-
     try:
+      format_type = format_type.lower()
+      os.makedirs(output_dir, exist_ok=True)
+
+      def progress_hook(d):
+        if not progress_callback:
+          return
+
+        if d.get("status") == "downloading":
+          total_bytes = d.get("total_bytes") or d.get("total_bytes_estimate", 0)
+          downloaded_bytes = d.get("downloaded_bytes", 0)
+
+          if total_bytes > 0:
+            percentage = downloaded_bytes / total_bytes
+            progress_callback(percentage, f"Baixando: {int(percentage * 100)}%")
+          else:
+            percent_str = self.clean_ansi(d.get("_percent_str", "0%")).strip()
+            progress_callback(0.0, f"Baixando: {percent_str}")
+
+        elif d.get("status") == "finished":
+          progress_callback(1.0, "Processando arquivo...")
+
+      # Template do caminho final
+      output_template = os.path.join(output_dir, "%(title)s.%(ext)s")
+
+      ydl_opts = {
+          "outtmpl": output_template,
+          "progress_hooks": [progress_hook],
+          "quiet": True,
+          "no_warnings": True,
+      }
+
+      if browser_cookies:
+        ydl_opts["cookiesfrombrowser"] = (browser_cookies,)
+
+      if format_type == "mp3":
+        ydl_opts.update({
+            "format": "bestaudio/best",
+            "postprocessors": [{
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": "mp3",
+                "preferredquality": audio_quality,
+            }],
+        })
+      else:  # MP4
+        if video_quality == "best":
+          fmt_string = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
+        else:
+          fmt_string = f"bestvideo[height<={video_quality}][ext=mp4]+bestaudio[ext=m4a]/best[height<={video_quality}][ext=mp4]/best"
+
+        ydl_opts.update({
+            "format": fmt_string,
+            "merge_output_format": "mp4",
+        })
+
       with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(url, download=True)
         if not info_dict:
